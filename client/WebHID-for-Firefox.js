@@ -278,9 +278,16 @@
 			}
 		}
 
-		if (matching_devices.length > 1)
+		const matching_physical_devices = {};
+		for (const dev of matching_devices)
 		{
-			console.log("TODO: Prompt user to narrow down device list" /* if different physical devices */, matching_devices);
+			matching_physical_devices[dev._physicalHash] ??= [];
+			matching_physical_devices[dev._physicalHash].push(dev);
+		}
+
+		if (matching_physical_devices.length > 1)
+		{
+			console.log("TODO: Prompt user to narrow down device list", matching_physical_devices);
 			return [];
 		}
 
