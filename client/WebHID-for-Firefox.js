@@ -4,6 +4,10 @@
 	{
 		_satisfiesOptions(options)
 		{
+			if (options.filters.length == 0)
+			{
+				return true;
+			}
 			for (const filter of options.filters)
 			{
 				if (this._satisfiesFilter(filter))
