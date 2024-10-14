@@ -18,40 +18,6 @@
 
 using namespace soup;
 
-struct PhysicalDevice
-{
-	std::vector<soup::hwHid> intrfaces{};
-
-	PhysicalDevice(soup::hwHid&& hid)
-	{
-		intrfaces.emplace_back(std::move(hid));
-	}
-};
-
-static std::vector<PhysicalDevice> devs{};
-
-static void refreshDevs()
-{
-	devs.clear();
-	for (auto& hid : hwHid::getAll())
-	{
-		bool is_new = true;
-		for (auto& dev : devs)
-		{
-			if (dev.intrfaces[0].isSamePhysicalDeviceAs(hid))
-			{
-				dev.intrfaces.emplace_back(std::move(hid));
-				is_new = false;
-				break;
-			}
-		}
-		if (is_new)
-		{
-			devs.emplace_back(std::move(hid));
-		}
-	}
-}
-
 // Based on https://source.chromium.org/chromium/chromium/src/+/main:services/device/public/cpp/hid/hid_blocklist.cc
 [[nodiscard]] static bool hid_is_permitted(const hwHid& hid)
 {
@@ -475,7 +441,6 @@ SOEKVYljbu9o5nFbg1zU0Ck=
 		return 1;
 	}
 	std::cout << "Listening on port 33881." << std::endl;
-	refreshDevs();
 	serv.run();
 	return 0;
 }
