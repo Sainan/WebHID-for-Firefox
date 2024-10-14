@@ -10,6 +10,7 @@
 #include <Server.hpp>
 #include <ServerWebService.hpp>
 #include <Socket.hpp>
+#include <string.hpp>
 #include <Thread.hpp>
 #include <WebSocketMessage.hpp>
 
@@ -99,6 +100,7 @@ struct ReceiveReportsTask;
 struct ClientData
 {
 	std::vector<ReceiveReportsTask*> subscriptions;
+	bool supports_report_ids = false;
 
 	[[nodiscard]] ReceiveReportsTask* findSubscription(uint32_t hid_hash) const noexcept;
 };
@@ -110,9 +112,10 @@ struct ReceiveReportsTask : public soup::Task
 	uint32_t hid_hash;
 	Thread thrd;
 	AtomicDeque<std::string> deque;
+	bool report_ids;
 
 	ReceiveReportsTask(SharedPtr<Worker>&& _sock, hwHid&& hid, uint32_t hid_hash)
-		: sock(std::move(_sock)), hid(std::move(hid)), hid_hash(hid_hash), thrd(&thrd_run, this)
+		: sock(std::move(_sock)), hid(std::move(hid)), hid_hash(hid_hash), thrd(&thrd_run, this), report_ids(static_cast<Socket&>(*sock).custom_data.getStructFromMap(ClientData).supports_report_ids)
 	{
 		static_cast<Socket&>(*sock).custom_data.getStructFromMap(ClientData).subscriptions.emplace_back(this);
 	}
@@ -122,7 +125,7 @@ struct ReceiveReportsTask : public soup::Task
 		ReceiveReportsTask& task = cap.get<ReceiveReportsTask>();
 		while (true)
 		{
-			const Buffer& report = task.hid.receiveReport();
+			const Buffer& report = (task.report_ids ? task.hid.receiveReportWithReportId() : task.hid.receiveReport());
 			SOUP_IF_UNLIKELY (report.empty())
 			{
 				//std::cout << "received empty report for " << task.hid_hash << std::endl;
@@ -130,7 +133,7 @@ struct ReceiveReportsTask : public soup::Task
 			}
 			//std::cout << "received report for " << task.hid_hash << std::endl;
 			BufferWriter bw;
-			uint8_t msgid = 0; bw.u8(msgid);
+			uint8_t msgid = (task.report_ids ? 1 : 0); bw.u8(msgid);
 			bw.u32_be(task.hid_hash);
 			bw.buf.append(report);
 			task.deque.emplace_back(bw.buf.toString());
@@ -342,8 +345,13 @@ SOEKVYljbu9o5nFbg1zU0Ck=
 
 	Server serv;
 	ServerWebService web_srv;
-	web_srv.should_accept_websocket_connection = [](Socket&, const HttpRequest& req, ServerWebService&)
+	web_srv.should_accept_websocket_connection = [](Socket& s, const HttpRequest& req, ServerWebService&)
 	{
+		if (req.path == "/r1")
+		{
+			s.custom_data.getStructFromMap(ClientData).supports_report_ids = true;
+		}
+
 #if DEBUG
 		return true;
 #else
@@ -376,6 +384,15 @@ SOEKVYljbu9o5nFbg1zU0Ck=
 						/*  [8] */ msg.append(std::to_string(hid.input_report_byte_length)).push_back(':');
 						/*  [9] */ msg.append(std::to_string(hid.output_report_byte_length)).push_back(':');
 						/* [10] */ msg.append(std::to_string(hid.feature_report_byte_length)).push_back(':');
+						std::vector<std::string> report_ids{};
+						for (unsigned int i = 0; i != 0x100; ++i)
+						{
+							if (hid.hasReportId(i))
+							{
+								report_ids.emplace_back(std::to_string(i));
+							}
+						}
+						/* [11] */ msg.append(string::join(report_ids, ','));
 						ServerWebService::wsSendText(s, std::move(msg));
 					}
 				}

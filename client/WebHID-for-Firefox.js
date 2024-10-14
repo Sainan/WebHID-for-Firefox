@@ -93,7 +93,7 @@
 		{
 			ws_promise = new Promise(function(resolve, reject)
 			{
-				const ws = new WebSocket("wss://127-0-0-1.p2ptls.com:33881/");
+				const ws = new WebSocket("wss://127-0-0-1.p2ptls.com:33881/r1");
 				ws.binaryType = "arraybuffer";
 				ws.onopen = function()
 				{
@@ -111,14 +111,30 @@
 						const view = new DataView(event.data);
 						switch (view.getUint8(0))
 						{
-						case 0:
-							const hash = view.getUint32(1);
-							const dev = hash_to_dev[hash];
-							const evt = new HIDInputReportEvent(new DataView(event.data.slice(5)));
-							dev.dispatchEvent(evt);
-							if ("oninputreport" in dev && typeof dev.oninputreport == "function")
+						case 0: // input report from server version 0.1.0
 							{
-								dev.oninputreport(evt);
+								const hash = view.getUint32(1);
+								const dev = hash_to_dev[hash];
+								const evt = new HIDInputReportEvent(new DataView(event.data.slice(5)));
+								dev.dispatchEvent(evt);
+								if ("oninputreport" in dev && typeof dev.oninputreport == "function")
+								{
+									dev.oninputreport(evt);
+								}
+								break;
+							}
+
+						case 1: // input report with reportId
+							{
+								const hash = view.getUint32(1);
+								const dev = hash_to_dev[hash];
+								const evt = new HIDInputReportEvent(new DataView(event.data.slice(6)));
+								evt.reportId = view.getUint8(5);
+								dev.dispatchEvent(evt);
+								if ("oninputreport" in dev && typeof dev.oninputreport == "function")
+								{
+									dev.oninputreport(evt);
+								}
 							}
 							break;
 						}
@@ -204,11 +220,17 @@
 									collection.usagePage = parseInt(msg[7]);
 									dev.collections.push(collection);
 
-									// Push HIDReportInfo shims, subtracting report id from length
-									// TODO: The reportId field here would be needed for Razer devices
-									collection.inputReports = [ { items: [ { reportSize: 8, reportCount: parseInt(msg[8]) - 1 } ] } ];
-									collection.outputReports = [ { items: [ { reportSize: 8, reportCount: parseInt(msg[9]) - 1 } ] } ];
-									collection.featureReports = [ { items: [ { reportSize: 8, reportCount: parseInt(msg[10]) - 1 } ] } ];
+									const reportIds = msg[11] ? msg[11].split(",").map(x => parseInt(x)) : [0];
+									collection.inputReports = [];
+									collection.outputReports = [];
+									collection.featureReports = [];
+									for (const reportId of reportIds)
+									{
+										// Push HIDReportInfo shims, subtracting report id from length
+										collection.inputReports.push({ reportId, items: [ { reportSize: 8, reportCount: parseInt(msg[8]) - 1 } ] });
+										collection.outputReports.push({ reportId, items: [ { reportSize: 8, reportCount: parseInt(msg[9]) - 1 } ] });
+										collection.featureReports.push({ reportId, items: [ { reportSize: 8, reportCount: parseInt(msg[10]) - 1 } ] });
+									}
 
 									devlist.push(dev);
 									hash_to_dev[hash] = dev;
