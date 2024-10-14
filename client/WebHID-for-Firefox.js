@@ -264,6 +264,78 @@
 		ws.send("list");
 		return devlist_promise;
 	};
+	const prompt_user_to_select_device = function(devices)
+	{
+		return new Promise(function(resolve, reject)
+		{
+			let div = document.createElement("div");
+			div.className = "webhid-popup";
+			div.textContent = "This website wants to connect to a HID device";
+			div.style.position = "fixed";
+			div.style.top = "0";
+			div.style.left = "0";
+			div.style.background = "#fff";
+			div.style.color = "#000";
+			div.style.padding = "15px";
+			div.style.fontFamily = "sans-serif";
+			div.style.boxShadow = "5px 5px 10px 0px #000";
+			div.style.zIndex = "99999999999";
+			{
+				const fieldset = document.createElement("fieldset");
+				fieldset.style.border = "2px groove ThreeDFace"; // maintain UA style
+				fieldset.style.margin = "10px 0";
+				for (const [i, device] of Object.entries(devices))
+				{
+					const group = document.createElement("div");
+					group.style.padding = "6px 0";
+					{
+						const input = document.createElement("input");
+						input.id = "webhid-for-firefox-device-" + i;
+						input.name = "webhid-for-firefox-device";
+						input.type = "radio";
+						input.checked = true;
+						group.appendChild(input);
+					}
+					{
+						const label = document.createElement("label");
+						label.setAttribute("for", "webhid-for-firefox-device-" + i);
+						label.textContent = device[0].productName;
+						group.appendChild(label);
+					}
+					fieldset.appendChild(group);
+				}
+				div.appendChild(fieldset);
+			}
+			{
+				const button = document.createElement("button");
+				button.style.float = "right";
+				button.style.border = "2px outset ButtonBorder"; // maintain UA style
+				button.style.backgroundColor = "ButtonFace"; // maintain UA style
+				button.style.marginLeft = "4px";
+				button.textContent = "Cancel";
+				button.onclick = function()
+				{
+					document.documentElement.removeChild(div);
+					reject("User cancelled request");
+				};
+				div.appendChild(button);
+			}
+			{
+				const button = document.createElement("button");
+				button.style.float = "right";
+				button.style.border = "2px outset ButtonBorder"; // maintain UA style
+				button.style.backgroundColor = "ButtonFace"; // maintain UA style
+				button.textContent = "Connect";
+				button.onclick = function()
+				{
+					resolve(devices[document.querySelector("[name=webhid-for-firefox-device]:checked").id.substr(26)]);
+					document.documentElement.removeChild(div);
+				};
+				div.appendChild(button);
+			}
+			div = document.documentElement.appendChild(div);
+		});
+	};
 
 	class HID extends EventTarget {};
 	window.HID = HID;
@@ -306,21 +378,12 @@
 			matching_physical_devices[dev._physicalHash] ??= [];
 			matching_physical_devices[dev._physicalHash].push(dev);
 		}
-
-		if (matching_physical_devices.length > 1)
+		const physical_device = await prompt_user_to_select_device(matching_physical_devices);
+		if (!requested_devices.includes(physical_device[0]._physicalHash))
 		{
-			console.log("TODO: Prompt user to narrow down device list", matching_physical_devices);
-			return [];
+			requested_devices.push(physical_device[0]._physicalHash);
+			save_requested_devices();
 		}
-
-		for (const dev of matching_devices)
-		{
-			if (!requested_devices.includes(dev._physicalHash))
-			{
-				requested_devices.push(dev._physicalHash);
-				save_requested_devices();
-			}
-		}
-		return matching_devices;
+		return physical_device;
 	};
 })();
