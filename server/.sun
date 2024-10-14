@@ -1,0 +1,3 @@
+name WebHID-for-Firefox-Server
++*.cpp
+require ../../Soup/soup
