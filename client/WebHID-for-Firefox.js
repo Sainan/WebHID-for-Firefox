@@ -41,6 +41,14 @@
 			}
 			return true;
 		}
+
+		_getDisplayName()
+		{
+			return this.productName
+				? this.productName
+				: "Unknown Device (" + this.vendorId.toString(16).toUpperCase().padStart(4, "0") + ":" + this.productId.toString(16).toUpperCase().padStart(4, "0") + ")"
+				;
+		}
 	}
 	window.HIDDevice = HIDDevice;
 
@@ -303,7 +311,7 @@
 					{
 						const label = document.createElement("label");
 						label.setAttribute("for", "webhid-for-firefox-device-" + i);
-						label.textContent = device[0].productName;
+						label.textContent = device[0]._getDisplayName();
 						group.appendChild(label);
 					}
 					fieldset.appendChild(group);
