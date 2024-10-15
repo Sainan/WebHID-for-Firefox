@@ -133,8 +133,8 @@
 								{
 									dev.oninputreport(evt);
 								}
-								break;
 							}
+							break;
 
 						case 1: // input report with reportId
 							{
@@ -147,6 +147,14 @@
 								{
 									dev.oninputreport(evt);
 								}
+							}
+							break;
+
+						case 2: // feature report
+							{
+								const hash = view.getUint32(1);
+								const dev = hash_to_dev[hash];
+								dev._featureReportResolve(new DataView(event.data.slice(6)));
 							}
 							break;
 						}
@@ -225,7 +233,13 @@
 										msg.set(data, 6); // data
 										ws.send(msg);
 									};
-									dev.receiveFeatureReport = () => { console.log("TODO: HIDDevice.receiveFeatureReport"); };
+									dev.receiveFeatureReport = function(reportId)
+									{
+										console.assert(this.opened);
+
+										ws.send("rcfr" + this._hash);
+										return new Promise(resolve => this._featureReportResolve = resolve);
+									};
 
 									const collection = new HIDCollectionInfo();
 									collection.usage = parseInt(msg[6]);

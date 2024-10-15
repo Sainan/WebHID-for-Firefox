@@ -420,6 +420,30 @@ SOEKVYljbu9o5nFbg1zU0Ck=
 					sub->unsubscribe();
 				}
 			}
+			else if (msg.data.substr(0, 4) == "rcfr")
+			{
+				uint32_t hid_hash = std::strtoul(msg.data.c_str() + 4, nullptr, 10);
+				for (auto& hid : hwHid::getAll())
+				{
+					if (hid_to_hash(hid) == hid_hash && hid_is_permitted(hid))
+					{
+						Buffer report;
+						try
+						{
+							hid.receiveFeatureReport(report);
+						}
+						catch (std::exception&)
+						{
+						}
+						BufferWriter bw;
+						uint8_t msgid = 2; bw.u8(msgid);
+						bw.u32_be(hid_hash);
+						bw.buf.append(report);
+						ServerWebService::wsSendBin(s, bw.buf.toString());
+						break;
+					}
+				}
+			}
 		}
 		else
 		{
