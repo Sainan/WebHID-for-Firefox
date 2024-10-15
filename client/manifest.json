@@ -3,7 +3,7 @@
 	"name": "WebHID for Firefox",
 	"description": "Provides the WebHID API by connecting to a local server (needs to be installed separately).",
 	"homepage_url": "https://github.com/Sainan/WebHID-for-Firefox",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"author": "Sainan",
 	"content_scripts": [
 		{
