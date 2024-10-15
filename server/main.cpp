@@ -55,10 +55,7 @@ using namespace soup;
 
 [[nodiscard]] static uint32_t hid_to_hash(const hwHid& hid)
 {
-	uint32_t hash = hid_to_physical_hash(hid);
-	hash = soup::joaat::hashRange((const char*)&hid.usage, sizeof(hid.usage), hash);
-	hash = soup::joaat::hashRange((const char*)&hid.usage_page, sizeof(hid.usage_page), hash);
-	return hash;
+	return soup::joaat::hash(hid.path);
 }
 
 struct ReceiveReportsTask;
