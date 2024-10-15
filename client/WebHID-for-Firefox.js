@@ -98,7 +98,7 @@
 	let devlist = [];
 	const hash_to_dev = {};
 	let active_subscriptions = 0;
-	let ws_promise, devlist_resolve;
+	let ws_promise, devlist_promise, devlist_resolve;
 	const get_ws = function()
 	{
 		if (!ws_promise)
@@ -273,11 +273,15 @@
 	};
 	const update_devlist = async function()
 	{
-		const ws = await get_ws();
-		devlist = [];
-		const devlist_promise = new Promise(resolve => devlist_resolve = resolve);
-		ws.send("list");
-		return devlist_promise;
+		if (!devlist_promise)
+		{
+			const ws = await get_ws();
+			devlist = [];
+			devlist_promise = new Promise(resolve => devlist_resolve = resolve);
+			ws.send("list");
+		}
+		await devlist_promise;
+		devlist_promise = undefined;
 	};
 	const prompt_user_to_select_device = function(devices)
 	{
