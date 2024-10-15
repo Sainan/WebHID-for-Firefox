@@ -340,8 +340,12 @@
 				button.textContent = "Connect";
 				button.onclick = function()
 				{
-					resolve(devices[document.querySelector("[name=webhid-for-firefox-device]:checked").id.substr(26)]);
-					document.documentElement.removeChild(div);
+					const input = document.querySelector("[name=webhid-for-firefox-device]:checked");
+					if (input)
+					{
+						resolve(devices[input.id.substr(26)]);
+						document.documentElement.removeChild(div);
+					}
 				};
 				div.appendChild(button);
 			}
