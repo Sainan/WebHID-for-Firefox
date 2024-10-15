@@ -404,7 +404,7 @@ SOEKVYljbu9o5nFbg1zU0Ck=
 				{
 					for (auto& hid : hwHid::getAll())
 					{
-						if (hid_is_permitted(hid) && hid_to_hash(hid) == hid_hash)
+						if (hid_to_hash(hid) == hid_hash && hid_is_permitted(hid))
 						{
 							Scheduler::get()->add<ReceiveReportsTask>(Scheduler::get()->getShared(s), std::move(hid), hid_hash);
 							break;
@@ -433,7 +433,7 @@ SOEKVYljbu9o5nFbg1zU0Ck=
 					uint32_t hid_hash; r.u32_be(hid_hash);
 					for (auto& hid : hwHid::getAll())
 					{
-						if (hid_is_permitted(hid) && hid_to_hash(hid) == hid_hash)
+						if (hid_to_hash(hid) == hid_hash && hid_is_permitted(hid))
 						{
 							Buffer data;
 							data.append(msg.data.data() + 5, msg.data.size() - 5);
@@ -451,7 +451,7 @@ SOEKVYljbu9o5nFbg1zU0Ck=
 					uint32_t hid_hash; r.u32_be(hid_hash);
 					for (auto& hid : hwHid::getAll())
 					{
-						if (hid_is_permitted(hid) && hid_to_hash(hid) == hid_hash)
+						if (hid_to_hash(hid) == hid_hash && hid_is_permitted(hid))
 						{
 							Buffer data;
 							data.append(msg.data.data() + 5, msg.data.size() - 5);
