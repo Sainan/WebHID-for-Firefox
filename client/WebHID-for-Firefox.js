@@ -333,7 +333,7 @@
 				button.onclick = function()
 				{
 					document.documentElement.removeChild(div);
-					reject("User cancelled request");
+					resolve([]);
 				};
 				div.appendChild(button);
 			}
@@ -400,7 +400,9 @@
 			matching_physical_devices[dev._physicalHash].push(dev);
 		}
 		const physical_device = await prompt_user_to_select_device(matching_physical_devices);
-		if (!requested_devices.includes(physical_device[0]._physicalHash))
+		if (physical_device.length != 0
+			&& !requested_devices.includes(physical_device[0]._physicalHash)
+			)
 		{
 			requested_devices.push(physical_device[0]._physicalHash);
 			save_requested_devices();
