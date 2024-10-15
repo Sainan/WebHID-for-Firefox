@@ -164,6 +164,62 @@ ReceiveReportsTask* ClientData::findSubscription(uint32_t hid_hash) const noexce
 	return nullptr;
 }
 
+struct ListDevicesTask : public soup::Task
+{
+	SharedPtr<Worker> sock;
+	Thread thrd;
+	std::vector<std::string> msgs;
+
+	ListDevicesTask(SharedPtr<Worker>&& _sock)
+		: sock(std::move(_sock)), thrd(&thrd_run, this)
+	{
+	}
+
+	static void thrd_run(Capture&& cap)
+	{
+		ListDevicesTask& task = cap.get<ListDevicesTask>();
+		for (const auto& hid : hwHid::getAll())
+		{
+			if (hid_is_permitted(hid))
+			{
+				std::string& msg = task.msgs.emplace_back("dev:");
+				/*  [1] */ msg.append(std::to_string(hid_to_hash(hid))).push_back(':');
+				/*  [2] */ msg.append(std::to_string(hid_to_physical_hash(hid))).push_back(':');
+				/*  [3] */ msg.append(std::to_string(hid.vendor_id)).push_back(':');
+				/*  [4] */ msg.append(std::to_string(hid.product_id)).push_back(':');
+				/*  [5] */ msg.append(hid.getProductName()).push_back(':');
+				/*  [6] */ msg.append(std::to_string(hid.usage)).push_back(':');
+				/*  [7] */ msg.append(std::to_string(hid.usage_page)).push_back(':');
+				/*  [8] */ msg.append(std::to_string(hid.input_report_byte_length)).push_back(':');
+				/*  [9] */ msg.append(std::to_string(hid.output_report_byte_length)).push_back(':');
+				/* [10] */ msg.append(std::to_string(hid.feature_report_byte_length)).push_back(':');
+				std::vector<std::string> report_ids{};
+				for (unsigned int i = 0; i != 0x100; ++i)
+				{
+					if (hid.hasReportId(i))
+					{
+						report_ids.emplace_back(std::to_string(i));
+					}
+				}
+				/* [11] */ msg.append(string::join(report_ids, ','));
+			}
+		}
+	}
+
+	void onTick() final
+	{
+		if (!thrd.isRunning())
+		{
+			for (auto& msg : msgs)
+			{
+				ServerWebService::wsSendText(static_cast<Socket&>(*sock), std::move(msg));
+			}
+			ServerWebService::wsSendText(static_cast<Socket&>(*sock), "dev");
+			setWorkDone();
+		}
+	}
+};
+
 int entry(std::vector<std::string>&& args, bool console)
 {
 	auto certstore = soup::make_shared<CertStore>();
@@ -339,34 +395,7 @@ SOEKVYljbu9o5nFbg1zU0Ck=
 		{
 			if (msg.data == "list")
 			{
-				for (const auto& hid : hwHid::getAll())
-				{
-					if (hid_is_permitted(hid))
-					{
-						std::string msg = "dev:";
-						/*  [1] */ msg.append(std::to_string(hid_to_hash(hid))).push_back(':');
-						/*  [2] */ msg.append(std::to_string(hid_to_physical_hash(hid))).push_back(':');
-						/*  [3] */ msg.append(std::to_string(hid.vendor_id)).push_back(':');
-						/*  [4] */ msg.append(std::to_string(hid.product_id)).push_back(':');
-						/*  [5] */ msg.append(hid.getProductName()).push_back(':');
-						/*  [6] */ msg.append(std::to_string(hid.usage)).push_back(':');
-						/*  [7] */ msg.append(std::to_string(hid.usage_page)).push_back(':');
-						/*  [8] */ msg.append(std::to_string(hid.input_report_byte_length)).push_back(':');
-						/*  [9] */ msg.append(std::to_string(hid.output_report_byte_length)).push_back(':');
-						/* [10] */ msg.append(std::to_string(hid.feature_report_byte_length)).push_back(':');
-						std::vector<std::string> report_ids{};
-						for (unsigned int i = 0; i != 0x100; ++i)
-						{
-							if (hid.hasReportId(i))
-							{
-								report_ids.emplace_back(std::to_string(i));
-							}
-						}
-						/* [11] */ msg.append(string::join(report_ids, ','));
-						ServerWebService::wsSendText(s, std::move(msg));
-					}
-				}
-				ServerWebService::wsSendText(s, "dev");
+				Scheduler::get()->add<ListDevicesTask>(Scheduler::get()->getShared(s));
 			}
 			else if (msg.data.substr(0, 4) == "open")
 			{
