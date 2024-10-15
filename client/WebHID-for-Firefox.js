@@ -296,6 +296,7 @@
 				const fieldset = document.createElement("fieldset");
 				fieldset.style.border = "2px groove ThreeDFace"; // maintain UA style
 				fieldset.style.margin = "10px 0";
+				let first = true;
 				for (const [i, device] of Object.entries(devices))
 				{
 					const group = document.createElement("div");
@@ -305,7 +306,11 @@
 						input.id = "webhid-for-firefox-device-" + i;
 						input.name = "webhid-for-firefox-device";
 						input.type = "radio";
-						input.checked = true;
+						if (first)
+						{
+							first = false;
+							input.checked = true;
+						}
 						group.appendChild(input);
 					}
 					{
