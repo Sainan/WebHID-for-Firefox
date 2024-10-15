@@ -321,10 +321,11 @@ SOEKVYljbu9o5nFbg1zU0Ck=
 		if (auto origin = req.findHeader("Origin"))
 		{
 			// Run MessageBoxA off-thread because otherwise explorer freezes if the user confirms the prompt via a keyboard press (enter or spacebar). Can't make this shit up.
+			// MB_DEFAULT_DESKTOP_ONLY makes the MessageBox appear on top of other apps, including Firefox, which is good as otherwise the user might be unaware of this prompt.
 			static bool res;
 			Thread thrd([](Capture&& cap)
 			{
-				res = (MessageBoxA(0, cap.get<std::string>().c_str(), "WebHID for Firefox", MB_YESNO) == IDYES);
+				res = (MessageBoxA(0, cap.get<std::string>().c_str(), "WebHID for Firefox", MB_YESNO | MB_DEFAULT_DESKTOP_ONLY) == IDYES);
 			}, std::string("Allow the page at " + *origin + " to access your HID devices?"));
 			thrd.awaitCompletion();
 			return res;
