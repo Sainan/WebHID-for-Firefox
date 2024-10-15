@@ -323,8 +323,14 @@ SOEKVYljbu9o5nFbg1zU0Ck=
 #else
 		if (auto origin = req.findHeader("Origin"))
 		{
-			std::string msg = "Allow the page at " + *origin + " to access your HID devices?";
-			return MessageBoxA(0, msg.c_str(), "WebHID for Firefox", MB_YESNO) == IDYES;
+			// Run MessageBoxA off-thread because otherwise explorer freezes if the user confirms the prompt via a keyboard press (enter or spacebar). Can't make this shit up.
+			static bool res;
+			Thread thrd([](Capture&& cap)
+			{
+				res = (MessageBoxA(0, cap.get<std::string>().c_str(), "WebHID for Firefox", MB_YESNO) == IDYES);
+			}, std::string("Allow the page at " + *origin + " to access your HID devices?"));
+			thrd.awaitCompletion();
+			return res;
 		}
 		return false;
 #endif
