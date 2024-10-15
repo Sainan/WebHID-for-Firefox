@@ -256,9 +256,12 @@
 
 						case "stopped":
 							const dev = hash_to_dev[parseInt(msg[1])];
-							dev.opened = false;
-							--active_subscriptions;
-							navigator.hid.dispatchEvent(new HIDConnectionEvent("disconnect", dev));
+							if (dev.opened)
+							{
+								dev.opened = false;
+								--active_subscriptions;
+								navigator.hid.dispatchEvent(new HIDConnectionEvent("disconnect", dev));
+							}
 							// TODO: We might want to periodically check for requested devices to fire "connect" event.
 							break;
 						}
