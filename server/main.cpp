@@ -88,7 +88,13 @@ struct ReceiveReportsTask : public soup::Task
 		ReceiveReportsTask& task = cap.get<ReceiveReportsTask>();
 		while (true)
 		{
+#if SOUP_WINDOWS
+			uint8_t msgid = (task.report_ids ? 1 : 0);
 			const Buffer& report = (task.report_ids ? task.hid.receiveReportWithReportId() : task.hid.receiveReport());
+#else
+			uint8_t msgid = 0;
+			const Buffer& report = task.hid.receiveReport();
+#endif
 			SOUP_IF_UNLIKELY (report.empty())
 			{
 				//std::cout << "received empty report for " << task.hid_hash << std::endl;
@@ -96,7 +102,7 @@ struct ReceiveReportsTask : public soup::Task
 			}
 			//std::cout << "received report for " << task.hid_hash << std::endl;
 			BufferWriter bw;
-			uint8_t msgid = (task.report_ids ? 1 : 0); bw.u8(msgid);
+			bw.u8(msgid);
 			bw.u32_be(task.hid_hash);
 			bw.buf.append(report);
 			task.deque.emplace_back(bw.buf.toString());
@@ -190,6 +196,7 @@ struct ListDevicesTask : public soup::Task
 				/*  [5] */ msg.append(hid.getProductName()).push_back(':');
 				/*  [6] */ msg.append(std::to_string(hid.usage)).push_back(':');
 				/*  [7] */ msg.append(std::to_string(hid.usage_page)).push_back(':');
+#if SOUP_WINDOWS
 				/*  [8] */ msg.append(std::to_string(hid.input_report_byte_length)).push_back(':');
 				/*  [9] */ msg.append(std::to_string(hid.output_report_byte_length)).push_back(':');
 				/* [10] */ msg.append(std::to_string(hid.feature_report_byte_length)).push_back(':');
@@ -202,6 +209,7 @@ struct ListDevicesTask : public soup::Task
 					}
 				}
 				/* [11] */ msg.append(string::join(report_ids, ','));
+#endif
 			}
 		}
 	}
@@ -393,6 +401,7 @@ SOEKVYljbu9o5nFbg1zU0Ck=
 	{
 		if (msg.is_text)
 		{
+			//std::cout << "Text message: " << msg.data << std::endl;
 			if (msg.data == "list")
 			{
 				Scheduler::get()->add<ListDevicesTask>(Scheduler::get()->getShared(s));
