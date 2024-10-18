@@ -156,6 +156,11 @@ struct ReceiveReportsTask : public soup::Task
 			setWorkDone();
 		}
 	}
+
+	int getSchedulingDisposition() const noexcept final
+	{
+		return HIGH_FREQUENCY;
+	}
 };
 
 ReceiveReportsTask* ClientData::findSubscription(uint32_t hid_hash) const noexcept
