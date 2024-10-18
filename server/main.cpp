@@ -384,7 +384,7 @@ SOEKVYljbu9o5nFbg1zU0Ck=
 			s.custom_data.getStructFromMap(ClientData).supports_report_ids = true;
 		}
 
-#if DEBUG
+#if DEBUG || !SOUP_WINDOWS
 		return true;
 #else
 		if (auto origin = req.findHeader("Origin"))
@@ -504,7 +504,7 @@ SOEKVYljbu9o5nFbg1zU0Ck=
 	};
 	if (!serv.bindCrypto(33881, &web_srv, std::move(certstore)))
 	{
-#if DEBUG
+#if DEBUG || !SOUP_WINDOWS
 		std::cout << "Failed to bind to port 33881." << std::endl;
 #else
 		MessageBoxA(0, "Failed to bind to port 33881.", "WebHID for Firefox", MB_ICONERROR);
