@@ -503,7 +503,7 @@ SOEKVYljbu9o5nFbg1zU0Ck=
 		std::cout << "Failed to bind to port 33881." << std::endl;
 #else
 		MessageBoxA(0, "Failed to bind to port 33881.", "WebHID for Firefox", MB_ICONERROR);
-#endif		
+#endif
 		return 1;
 	}
 	std::cout << "Listening on port 33881." << std::endl;
