@@ -88,7 +88,7 @@ struct ReceiveReportsTask : public soup::Task
 		ReceiveReportsTask& task = cap.get<ReceiveReportsTask>();
 		while (true)
 		{
-			const Buffer& report = (task.report_ids ? task.hid.receiveReportWithReportId() : task.hid.receiveReport());
+			const Buffer& report = (task.report_ids ? task.hid.receiveReportWithReportId() : task.hid.receiveReportWithoutReportId());
 			SOUP_IF_UNLIKELY (report.empty())
 			{
 				//std::cout << "received empty report for " << task.hid_hash << std::endl;
