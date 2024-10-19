@@ -297,7 +297,7 @@
 		await devlist_promise;
 		devlist_promise = undefined;
 	};
-	const prompt_user_to_select_device = function(devices)
+	const create_connect_prompt = function()
 	{
 		return new Promise(function(resolve, reject)
 		{
@@ -317,31 +317,6 @@
 				const fieldset = document.createElement("fieldset");
 				fieldset.style.border = "2px groove ThreeDFace"; // maintain UA style
 				fieldset.style.margin = "10px 0";
-				let first = true;
-				for (const [i, device] of Object.entries(devices))
-				{
-					const group = document.createElement("div");
-					group.style.padding = "6px 0";
-					{
-						const input = document.createElement("input");
-						input.id = "webhid-for-firefox-device-" + i;
-						input.name = "webhid-for-firefox-device";
-						input.type = "radio";
-						if (first)
-						{
-							first = false;
-							input.checked = true;
-						}
-						group.appendChild(input);
-					}
-					{
-						const label = document.createElement("label");
-						label.setAttribute("for", "webhid-for-firefox-device-" + i);
-						label.textContent = device[0]._getDisplayName();
-						group.appendChild(label);
-					}
-					fieldset.appendChild(group);
-				}
 				div.appendChild(fieldset);
 			}
 			{
@@ -354,7 +329,7 @@
 				button.onclick = function()
 				{
 					document.documentElement.removeChild(div);
-					resolve([]);
+					resolve();
 				};
 				div.appendChild(button);
 			}
@@ -369,7 +344,7 @@
 					const input = document.querySelector("[name=webhid-for-firefox-device]:checked");
 					if (input)
 					{
-						resolve(devices[input.id.substr(26)]);
+						resolve(parseInt(input.id.substr(26)));
 						document.documentElement.removeChild(div);
 					}
 				};
@@ -377,6 +352,66 @@
 			}
 			div = document.documentElement.appendChild(div);
 		});
+	};
+	const update_connect_prompt = function(devices)
+	{
+		const fieldset = document.querySelector("#webhid-for-firefox-popup fieldset");
+
+		if (fieldset.textContent == "No compatible devices found")
+		{
+			fieldset.innerHTML = "";
+		}
+		else
+		{
+			// Handle removed devices
+			const arr = document.querySelectorAll("[name=webhid-for-firefox-device]");
+			for (let i = 0; i != arr.length; ++i)
+			{
+				if (!devices[arr[i].id.substr(26)])
+				{
+					arr[i].parentNode.parentNode.removeChild(arr[i].parentNode);
+				}
+			}
+		}
+
+		// Handle added devices
+		for (const [i, device] of Object.entries(devices))
+		{
+			if (!document.getElementById("webhid-for-firefox-device-" + i))
+			{
+				const group = document.createElement("div");
+				group.style.padding = "6px 0";
+				{
+					const input = document.createElement("input");
+					input.id = "webhid-for-firefox-device-" + i;
+					input.name = "webhid-for-firefox-device";
+					input.type = "radio";
+					group.appendChild(input);
+				}
+				{
+					const label = document.createElement("label");
+					label.setAttribute("for", "webhid-for-firefox-device-" + i);
+					label.textContent = device[0]._getDisplayName();
+					group.appendChild(label);
+				}
+				fieldset.appendChild(group);
+			}
+		}
+
+		const first = document.querySelector("[name=webhid-for-firefox-device]");
+		if (first)
+		{
+			// If no device is checked, check the first one.
+			if (!document.querySelector("[name=webhid-for-firefox-device]:checked"))
+			{
+				first.checked = true;
+			}
+		}
+		else
+		{
+			// No devices found; say this explicitly instead of showing an empty fieldset.
+			fieldset.textContent = "No compatible devices found";
+		}
 	};
 
 	class HID extends EventTarget {};
@@ -411,30 +446,49 @@
 			throw new Error("A device request is already in progress");
 		}
 
-		const matching_devices = [];
-		await update_devlist();
-		for (const dev of devlist)
+		const get_matching_physical_devices = async function()
 		{
-			if (dev._satisfiesOptions(options))
+			const matching_devices = [];
+			await update_devlist();
+			for (const dev of devlist)
 			{
-				matching_devices.push(dev);
+				if (dev._satisfiesOptions(options))
+				{
+					matching_devices.push(dev);
+				}
 			}
-		}
 
-		const matching_physical_devices = {};
-		for (const dev of matching_devices)
+			const matching_physical_devices = {};
+			for (const dev of matching_devices)
+			{
+				matching_physical_devices[dev._physicalHash] ??= [];
+				matching_physical_devices[dev._physicalHash].push(dev);
+			}
+			return matching_physical_devices;
+		};
+
+		let matching_physical_devices = await get_matching_physical_devices();
+		const promise = create_connect_prompt();
+		update_connect_prompt(matching_physical_devices);
+
+		const interval = setInterval(async function()
 		{
-			matching_physical_devices[dev._physicalHash] ??= [];
-			matching_physical_devices[dev._physicalHash].push(dev);
-		}
-		const physical_device = await prompt_user_to_select_device(matching_physical_devices);
-		if (physical_device.length != 0
-			&& !requested_devices.includes(physical_device[0]._physicalHash)
+			matching_physical_devices = await get_matching_physical_devices();
+			update_connect_prompt(matching_physical_devices);
+		}, 1000);
+
+		const hash = await promise;
+
+		if (hash
+			&& !requested_devices.includes(hash)
 			)
 		{
-			requested_devices.push(physical_device[0]._physicalHash);
+			requested_devices.push(hash);
 			save_requested_devices();
 		}
-		return physical_device;
+
+		clearInterval(interval);
+
+		return hash ? matching_physical_devices[hash] : [];
 	};
 })();
