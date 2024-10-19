@@ -454,7 +454,7 @@ SOEKVYljbu9o5nFbg1zU0Ck=
 		else
 		{
 			//std::cout << "Binary message: " << string::bin2hex(msg.data) << std::endl;
-			StringRefReader r(msg.data);
+			MemoryRefReader r(msg.data);
 			uint8_t msgid; r.u8(msgid);
 			if (msgid == 0)
 			{
