@@ -99,7 +99,7 @@ struct ReceiveReportsTask : public soup::Task
 			uint8_t msgid = (task.report_ids ? 1 : 0); bw.u8(msgid);
 			bw.u32_be(task.hid_hash);
 			bw.buf.append(report);
-			task.deque.emplace_back(bw.buf.toString());
+			task.deque.emplace_front(bw.buf.toString());
 		}
 		//std::cout << "thread stopping for " << task.hid_hash << std::endl;
 	}
@@ -132,7 +132,7 @@ struct ReceiveReportsTask : public soup::Task
 		}
 		else
 		{
-			while (auto node = deque.pop_front())
+			while (auto node = deque.pop_back())
 			{
 				//std::cout << "received report: " << string::bin2hex(*node) << std::endl;
 				ServerWebService::wsSendBin(static_cast<Socket&>(*sock), std::move(*node));
