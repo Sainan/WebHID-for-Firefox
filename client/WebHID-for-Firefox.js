@@ -302,7 +302,7 @@
 		return new Promise(function(resolve, reject)
 		{
 			let div = document.createElement("div");
-			div.className = "webhid-popup";
+			div.id = "webhid-for-firefox-popup";
 			div.textContent = "This website wants to connect to a HID device";
 			div.style.position = "fixed";
 			div.style.top = "0";
@@ -402,7 +402,14 @@
 	};
 	navigator.hid.requestDevice = async function(options)
 	{
-		console.assert("filters" in options);
+		if (!("filters" in options))
+		{
+			throw new Error("'filters' must be given");
+		}
+		if (document.getElementById("webhid-for-firefox-popup"))
+		{
+			throw new Error("A device request is already in progress");
+		}
 
 		const matching_devices = [];
 		await update_devlist();
