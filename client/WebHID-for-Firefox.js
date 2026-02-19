@@ -236,8 +236,11 @@
 									dev.receiveFeatureReport = function(reportId)
 									{
 										console.assert(this.opened);
-
-										ws.send("rcfr" + this._hash);
+										const msg = new Uint8Array(6);
+										msg.set([2], 0); // msg id
+										msg.set([this._hash >> 24, (this._hash >> 16) & 0xff, (this._hash >> 8) & 0xff, this._hash & 0xff], 1); // hid hash
+										msg.set([reportId], 5); // report id
+										ws.send(msg);
 										return new Promise(resolve => this._featureReportResolve = resolve);
 									};
 

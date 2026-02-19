@@ -399,30 +399,6 @@ fPOzDget78P/d2IgzbaKEA==
 					sub->unsubscribe();
 				}
 			}
-			else if (msg.data.substr(0, 4) == "rcfr")
-			{
-				uint32_t hid_hash = std::strtoul(msg.data.c_str() + 4, nullptr, 10);
-				for (auto& hid : hwHid::getAll())
-				{
-					if (hid_to_hash(hid) == hid_hash && hid_is_permitted(hid))
-					{
-						Buffer report;
-						try
-						{
-							hid.receiveFeatureReport(report);
-						}
-						catch (std::exception&)
-						{
-						}
-						BufferWriter bw;
-						uint8_t msgid = 2; bw.u8(msgid);
-						bw.u32_be(hid_hash);
-						bw.buf.append(report);
-						ServerWebService::wsSendBin(s, bw.buf.toString());
-						break;
-					}
-				}
-			}
 		}
 		else
 		{
@@ -460,6 +436,36 @@ fPOzDget78P/d2IgzbaKEA==
 							data.append(msg.data.data() + 5, msg.data.size() - 5);
 							//std::cout << "sending feature report: " << string::bin2hex(data.toString()) << std::endl;
 							hid.sendFeatureReport(std::move(data));
+							break;
+						}
+					}
+				}
+			}
+			else if (msgid == 2)
+			{
+				if (msg.data.size() >= 5)
+				{
+					uint32_t hid_hash; r.u32_be(hid_hash);
+					for (auto& hid : hwHid::getAll())
+					{
+						if (hid_to_hash(hid) == hid_hash && hid_is_permitted(hid))
+						{
+							uint8_t reportid = msg.data.data()[5];
+							Buffer report;
+							report.push_back(reportid);
+							//std::cout << "receiving feature report: " << string::bin2hex(data.toString()) << std::endl;
+							try
+							{
+								hid.receiveFeatureReport(report);
+							}
+							catch (std::exception &)
+							{
+							}
+							BufferWriter bw;
+							uint8_t msgid = 2; bw.u8(msgid);
+							bw.u32_be(hid_hash);
+							bw.buf.append(report);
+							ServerWebService::wsSendBin(s, bw.buf.toString());
 							break;
 						}
 					}
