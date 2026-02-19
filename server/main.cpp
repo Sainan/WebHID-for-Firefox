@@ -453,7 +453,7 @@ fPOzDget78P/d2IgzbaKEA==
 							uint8_t reportid = msg.data.data()[5];
 							Buffer report;
 							report.push_back(reportid);
-							//std::cout << "receiving feature report: " << string::bin2hex(data.toString()) << std::endl;
+							// std::cout << "receiving feature report: " << string::bin2hex(report.toString()) << std::endl;
 							try
 							{
 								hid.receiveFeatureReport(report);
@@ -461,9 +461,11 @@ fPOzDget78P/d2IgzbaKEA==
 							catch (std::exception &)
 							{
 							}
+							// std::cout << "receiving feature report: " << string::bin2hex(report.toString()) << std::endl;
 							BufferWriter bw;
 							uint8_t msgid = 2; bw.u8(msgid);
 							bw.u32_be(hid_hash);
+							bw.u8(reportid);
 							bw.buf.append(report);
 							ServerWebService::wsSendBin(s, bw.buf.toString());
 							break;
