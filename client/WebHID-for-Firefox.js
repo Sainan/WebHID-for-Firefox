@@ -19,16 +19,16 @@
 		}
 
 		_satisfiesFilter(filter)
-		{
-			if ("vendorId" in filter && filter.vendorId != this.vendorId)
+    {
+			if ("vendorId" in filter && filter.vendorId !== undefined && filter.vendorId !== this.vendorId)
 			{
 				return false;
 			}
-			if ("productId" in filter && filter.productId != this.productId)
+			if ("productId" in filter && filter.productId !== undefined && filter.productId !== this.productId)
 			{
 				return false;
 			}
-			if ("usagePage" in filter || "usage" in filter)
+			if (("usagePage" in filter && filter.usagePage !== undefined) || ("usage" in filter && filter.usage !== undefined))
 			{
 				for (const collection of this.collections)
 				{
