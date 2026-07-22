@@ -30,9 +30,11 @@ browser.webRequest.onBeforeRequest.addListener(
 	{
 		urls: [
 			"https://wootility.io/",
+			"https://wootility.io/index.html",
 			"https://beta.wootility.io/",
+			"https://beta.wootility.io/index.html",
 		],
-		types: ["main_frame"]
+		types: ["main_frame", "xmlhttprequest"]
 	},
 	["blocking"]
 );
