@@ -24,5 +24,13 @@
 	],
 	"background": {
 		"scripts": ["background.js"]
+	},
+	"browser_specific_settings": {
+		"gecko": {
+			"id": "{8badf7fe-c0e0-464b-a329-1411c3b3651a}",
+			"data_collection_permissions": {
+				"required": ["none"]
+			}
+		}
 	}
 }
