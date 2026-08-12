@@ -63,7 +63,6 @@ struct ReceiveReportsTask;
 struct ClientData
 {
 	std::vector<ReceiveReportsTask*> subscriptions;
-	bool supports_report_ids = false;
 
 	[[nodiscard]] ReceiveReportsTask* findSubscription(uint32_t hid_hash) const noexcept;
 };
@@ -75,10 +74,9 @@ struct ReceiveReportsTask : public soup::Task
 	uint32_t hid_hash;
 	Thread thrd;
 	AtomicDeque<std::string> deque;
-	bool report_ids;
 
 	ReceiveReportsTask(SharedPtr<Worker>&& _sock, hwHid&& hid, uint32_t hid_hash)
-		: sock(std::move(_sock)), hid(std::move(hid)), hid_hash(hid_hash), thrd(&thrd_run, this), report_ids(static_cast<Socket&>(*sock).custom_data.getStructFromMap(ClientData).supports_report_ids)
+		: sock(std::move(_sock)), hid(std::move(hid)), hid_hash(hid_hash), thrd(&thrd_run, this)
 	{
 		static_cast<Socket&>(*sock).custom_data.getStructFromMap(ClientData).subscriptions.emplace_back(this);
 	}
@@ -88,7 +86,7 @@ struct ReceiveReportsTask : public soup::Task
 		ReceiveReportsTask& task = cap.get<ReceiveReportsTask>();
 		while (true)
 		{
-			const Buffer<>& report = (task.report_ids ? task.hid.receiveReportWithReportId() : task.hid.receiveReportWithoutReportId());
+			const Buffer<>& report = task.hid.receiveReportWithReportId();
 			SOUP_IF_UNLIKELY (report.empty())
 			{
 				//std::cout << "received empty report for " << task.hid_hash << std::endl;
@@ -96,7 +94,7 @@ struct ReceiveReportsTask : public soup::Task
 			}
 			//std::cout << "received report for " << task.hid_hash << std::endl;
 			BufferWriter bw;
-			uint8_t msgid = (task.report_ids ? 1 : 0); bw.u8(msgid);
+			uint8_t msgid = 1; bw.u8(msgid);
 			bw.u32_be(task.hid_hash);
 			bw.buf.append(report);
 			task.deque.emplace_front(bw.buf.toString());
@@ -361,10 +359,10 @@ fPOzDget78P/d2IgzbaKEA==
 	};
 	web_srv.on_websocket_connection_established = [](Socket& s, const HttpRequest& req, ServerWebService&)
 	{
-		if (req.path == "/r1")
+		/*if (req.path == "/r1")
 		{
 			s.custom_data.getStructFromMap(ClientData).supports_report_ids = true;
-		}
+		}*/
 		ServerWebService::wsSendText(s, "ver:0.2.4");
 	};
 	web_srv.on_websocket_message = [](WebSocketMessage& msg, Socket& s, ServerWebService&)
