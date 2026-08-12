@@ -379,6 +379,10 @@
 	const update_connect_prompt = function(devices)
 	{
 		const fieldset = document.querySelector("#webhid-for-firefox-popup fieldset");
+		if (!fieldset)
+		{
+			return; // Race condition
+		}
 
 		if (fieldset.textContent == "No compatible devices found")
 		{
