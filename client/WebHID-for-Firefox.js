@@ -149,7 +149,7 @@
 								const evt = new HIDInputReportEvent(dev, new DataView(event.data.slice(6)));
 								evt.reportId = view.getUint8(5);
 								dev.dispatchEvent(evt);
-								if ("oninputreport" in dev && typeof dev.oninputreport == "function")
+								if (typeof dev.oninputreport == "function")
 								{
 									dev.oninputreport(evt);
 								}
