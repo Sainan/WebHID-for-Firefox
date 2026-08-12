@@ -175,39 +175,56 @@
 						case "dev":
 							if (msg.length > 1)
 							{
-								const hash = parseInt(msg[1]);
+								const hidHash = parseInt(msg[1]);
+								const physHash = parseInt(msg[2]);
+								const vendorId = parseInt(msg[3]);
+								const collapseIntoSameDevice = (vendorId == 0x8089); // Shitty fix for Sayodevice which expects its collections to be grouped in the same HIDDevice even tho that's not how they present it to the OS.
+								const hash = (collapseIntoSameDevice ? physHash : hidHash);
+								let dev;
 								if (hash in hash_to_dev)
 								{
-									devlist.push(hash_to_dev[hash]);
+									dev = hash_to_dev[hash];
+									if (!collapseIntoSameDevice || devlist.indexOf(dev) == -1)
+									{
+										devlist.push(dev);
+									}
 								}
 								else
 								{
-									const dev = new HIDDevice();
-									dev._hash = hash;
-									dev._physicalHash = parseInt(msg[2]);
-									dev.vendorId = parseInt(msg[3]);
+									dev = new HIDDevice();
+									dev._physicalHash = physHash;
+									dev.vendorId = vendorId;
 									dev.productId = parseInt(msg[4]);
 									dev.productName = msg[5];
 									dev.collections = [];
 									dev.opened = false;
 									dev.open = async function()
 									{
+										//console.info("open device", this);
 										console.assert(!this.opened);
 
-										ws.send("open" + this._hash);
+										for (const coll of this.collections)
+										{
+											ws.send("open" + coll._hash);
+											++active_subscriptions;
+										}
 										this.opened = true;
-										++active_subscriptions;
 									};
 									dev.close = async function()
 									{
+										//console.info("close device", this);
 										console.assert(this.opened);
 
-										ws.send("clse" + this._hash);
+										for (const coll of this.collections)
+										{
+											ws.send("clse" + coll._hash);
+											--active_subscriptions;
+										}
 										this.opened = false;
-										--active_subscriptions;
 									};
 									dev.forget = async function()
 									{
+										//console.info("forget device", this);
 										await this.close();
 
 										const index = requested_devices.indexOf(this._physicalHash);
@@ -221,38 +238,80 @@
 									{
 										console.assert(this.opened);
 
-										// prepend: msg id (1 byte) + hid hash (4 bytes) + report id (1 byte)
-										const msg = new Uint8Array(data.byteLength + 6);
-										msg.set([0], 0); // msg id
-										msg.set([this._hash >> 24, (this._hash >> 16) & 0xff, (this._hash >> 8) & 0xff, this._hash & 0xff], 1); // hid hash
-										msg.set([reportId], 5); // report id
-										msg.set(data, 6); // data
-										ws.send(msg);
+										let some = false;
+										for (const coll of this.collections)
+										{
+											if (coll.outputReports.some(x => x.reportId == reportId))
+											{
+												// prepend: msg id (1 byte) + hid hash (4 bytes) + report id (1 byte)
+												const msg = new Uint8Array(data.byteLength + 6);
+												msg.set([0], 0); // msg id
+												msg.set([coll._hash >> 24, (coll._hash >> 16) & 0xff, (coll._hash >> 8) & 0xff, coll._hash & 0xff], 1); // hid hash
+												msg.set([reportId], 5); // report id
+												msg.set(data, 6); // data
+												ws.send(msg);
+												//console.info(`sendReport: sending reportId ${reportId} to collection with usage=${coll.usage}, usagePage=${coll.usagePage}`);
+												some = true;
+											}
+										}
+										if (!some)
+										{
+											console.warn(`sendReport: failed to find collection for reportId ${reportId}`);
+										}
 									};
 									dev.sendFeatureReport = async function(reportId, data)
 									{
 										console.assert(this.opened);
 
-										// prepend: msg id (1 byte) + hid hash (4 bytes) + report id (1 byte)
-										const msg = new Uint8Array(data.byteLength + 6);
-										msg.set([1], 0); // msg id
-										msg.set([this._hash >> 24, (this._hash >> 16) & 0xff, (this._hash >> 8) & 0xff, this._hash & 0xff], 1); // hid hash
-										msg.set([reportId], 5); // report id
-										msg.set(data, 6); // data
-										ws.send(msg);
+										let some = false;
+										for (const coll of this.collections)
+										{
+											if (coll.featureReports.some(x => x.reportId == reportId))
+											{
+												// prepend: msg id (1 byte) + hid hash (4 bytes) + report id (1 byte)
+												const msg = new Uint8Array(data.byteLength + 6);
+												msg.set([1], 0); // msg id
+												msg.set([coll._hash >> 24, (coll._hash >> 16) & 0xff, (coll._hash >> 8) & 0xff, coll._hash & 0xff], 1); // hid hash
+												msg.set([reportId], 5); // report id
+												msg.set(data, 6); // data
+												ws.send(msg);
+												//console.info(`sendFeatureReport: sending reportId ${reportId} to collection with usage=${coll.usage}, usagePage=${coll.usagePage}`);
+												some = true;
+											}
+										}
+										if (!some)
+										{
+											console.warn(`sendFeatureReport: failed to find collection for reportId ${reportId}`);
+										}
 									};
 									dev.receiveFeatureReport = function(reportId)
 									{
 										console.assert(this.opened);
-										const msg = new Uint8Array(6);
-										msg.set([2], 0); // msg id
-										msg.set([this._hash >> 24, (this._hash >> 16) & 0xff, (this._hash >> 8) & 0xff, this._hash & 0xff], 1); // hid hash
-										msg.set([reportId], 5); // report id
-										ws.send(msg);
-										return new Promise(resolve => this._featureReportResolve = resolve);
+
+										for (const coll of this.collections)
+										{
+											if (coll.featureReports.some(x => x.reportId == reportId))
+											{
+												const msg = new Uint8Array(6);
+												msg.set([2], 0); // msg id
+												msg.set([coll._hash >> 24, (coll._hash >> 16) & 0xff, (coll._hash >> 8) & 0xff, coll._hash & 0xff], 1); // hid hash
+												msg.set([reportId], 5); // report id
+												ws.send(msg);
+												//console.info(`receiveFeatureReport: routing reportId ${reportId} to collection with usage=${coll.usage}, usagePage=${coll.usagePage}`);
+												return new Promise(resolve => this._featureReportResolve = resolve);
+											}
+										}
+										console.warn(`receiveFeatureReport: failed to find collection for reportId ${reportId}`);
 									};
 
+									devlist.push(dev);
+									hash_to_dev[hash] = dev;
+								}
+
+								if (!dev.collections.some(c => c._hash == hidHash))
+								{
 									const collection = new HIDCollectionInfo();
+									collection._hash = hidHash;
 									collection.usage = parseInt(msg[6]);
 									collection.usagePage = parseInt(msg[7]);
 									dev.collections.push(collection);
@@ -280,9 +339,6 @@
 										collection.outputReports.push(create_hid_report_info(reportId, parseInt(msg[9])));
 										collection.featureReports.push(create_hid_report_info(reportId, parseInt(msg[10])));
 									}
-
-									devlist.push(dev);
-									hash_to_dev[hash] = dev;
 								}
 							}
 							else
@@ -459,7 +515,7 @@
 				matching_devices.push(dev);
 			}
 		}
-		//console.log("getDevices matches:", matching_devices);
+		//console.info("getDevices returns:", matching_devices);
 		return matching_devices;
 	};
 	navigator.hid.requestDevice = async function(options)
@@ -516,6 +572,7 @@
 
 		clearInterval(interval);
 
+		//console.info("requestDevice returns:", hash ? matching_physical_devices[hash] : []);
 		return hash ? matching_physical_devices[hash] : [];
 	};
 })();
