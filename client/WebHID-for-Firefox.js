@@ -129,7 +129,7 @@
 						const view = new DataView(event.data);
 						switch (view.getUint8(0))
 						{
-						case 0: // input report from server version 0.1.0
+						case 0: // input report from server version 0.1.0 (removed in 0.2.5)
 							{
 								const hash = view.getUint32(1);
 								const dev = hash_to_dev[hash];
