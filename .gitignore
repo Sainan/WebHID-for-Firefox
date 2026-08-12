@@ -2,3 +2,5 @@ client/content_script.js
 int/
 server/WebHID-for-Firefox-Server
 server/WebHID-for-Firefox-Server.exe
+client.zip
+client.source.zip
