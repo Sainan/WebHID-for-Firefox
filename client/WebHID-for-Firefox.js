@@ -310,10 +310,13 @@
 
 								if (!dev.collections.some(c => c._hash == hidHash))
 								{
+									const usage = parseInt(msg[6]);
+									const usagePage = parseInt(msg[7]);
+
 									const collection = new HIDCollectionInfo();
 									collection._hash = hidHash;
-									collection.usage = parseInt(msg[6]);
-									collection.usagePage = parseInt(msg[7]);
+									collection.usage = usage;
+									collection.usagePage = usagePage;
 									dev.collections.push(collection);
 
 									const reportIds = msg[11] ? msg[11].split(",").map(x => parseInt(x)) : [0];
@@ -325,7 +328,7 @@
 										const item = new HIDReportItem();
 										item.reportSize = 8;
 										item.reportCount = length - 1; // excluding report id
-										item.usages = []; // prevent an error on https://nondebug.github.io/webhid-explorer/
+										item.usages = [(usagePage << 16) | usage];
 
 										const info = new HIDReportInfo();
 										info.reportId = reportId;
