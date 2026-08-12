@@ -78,10 +78,11 @@
 
 	class HIDInputReportEvent extends Event
 	{
-		constructor(data)
+		constructor(device, data)
 		{
 			super("inputreport");
 			this.data = data;
+			this.device = device;
 		}
 	}
 	window.HIDInputReportEvent = HIDInputReportEvent;
@@ -132,7 +133,7 @@
 							{
 								const hash = view.getUint32(1);
 								const dev = hash_to_dev[hash];
-								const evt = new HIDInputReportEvent(new DataView(event.data.slice(5)));
+								const evt = new HIDInputReportEvent(dev, new DataView(event.data.slice(5)));
 								dev.dispatchEvent(evt);
 								if ("oninputreport" in dev && typeof dev.oninputreport == "function")
 								{
@@ -145,7 +146,7 @@
 							{
 								const hash = view.getUint32(1);
 								const dev = hash_to_dev[hash];
-								const evt = new HIDInputReportEvent(new DataView(event.data.slice(6)));
+								const evt = new HIDInputReportEvent(dev, new DataView(event.data.slice(6)));
 								evt.reportId = view.getUint8(5);
 								dev.dispatchEvent(evt);
 								if ("oninputreport" in dev && typeof dev.oninputreport == "function")
