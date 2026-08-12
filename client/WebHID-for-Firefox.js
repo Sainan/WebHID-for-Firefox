@@ -68,6 +68,14 @@
 		}
 	}
 
+	class HIDReportInfo
+	{
+	}
+
+	class HIDReportItem
+	{
+	}
+
 	class HIDInputReportEvent extends Event
 	{
 		constructor(data)
@@ -253,12 +261,24 @@
 									collection.inputReports = [];
 									collection.outputReports = [];
 									collection.featureReports = [];
+									const create_hid_report_info = function (reportId, length)
+									{
+										const item = new HIDReportItem();
+										item.reportSize = 8;
+										item.reportCount = length - 1; // excluding report id
+										item.usages = []; // prevent an error on https://nondebug.github.io/webhid-explorer/
+
+										const info = new HIDReportInfo();
+										info.reportId = reportId;
+										info.items = [item];
+										return info;
+									};
 									for (const reportId of reportIds)
 									{
 										// Push HIDReportInfo shims, subtracting report id from length
-										collection.inputReports.push({ reportId, items: [ { reportSize: 8, reportCount: parseInt(msg[8]) - 1 } ] });
-										collection.outputReports.push({ reportId, items: [ { reportSize: 8, reportCount: parseInt(msg[9]) - 1 } ] });
-										collection.featureReports.push({ reportId, items: [ { reportSize: 8, reportCount: parseInt(msg[10]) - 1 } ] });
+										collection.inputReports.push(create_hid_report_info(reportId, parseInt(msg[8])));
+										collection.outputReports.push(create_hid_report_info(reportId, parseInt(msg[9])));
+										collection.featureReports.push(create_hid_report_info(reportId, parseInt(msg[10])));
 									}
 
 									devlist.push(dev);
