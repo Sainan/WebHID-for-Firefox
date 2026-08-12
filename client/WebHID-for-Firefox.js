@@ -336,24 +336,26 @@
 									collection.inputReports = [];
 									collection.outputReports = [];
 									collection.featureReports = [];
-									const create_hid_report_info = function (reportId, length)
+									const create_hid_report_info = function (arr, reportId, length)
 									{
-										const item = new HIDReportItem();
-										item.reportSize = 8;
-										item.reportCount = length - 1; // excluding report id
-										item.usages = [(usagePage << 16) | usage];
+										if (length)
+										{
+											const item = new HIDReportItem();
+											item.reportSize = 8;
+											item.reportCount = length - 1; // excluding report id
+											item.usages = [(usagePage << 16) | usage];
 
-										const info = new HIDReportInfo();
-										info.reportId = reportId;
-										info.items = [item];
-										return info;
+											const info = new HIDReportInfo();
+											info.reportId = reportId;
+											info.items = [item];
+											arr.push(info);
+										}
 									};
 									for (const reportId of reportIds)
 									{
-										// Push HIDReportInfo shims, subtracting report id from length
-										collection.inputReports.push(create_hid_report_info(reportId, parseInt(msg[8])));
-										collection.outputReports.push(create_hid_report_info(reportId, parseInt(msg[9])));
-										collection.featureReports.push(create_hid_report_info(reportId, parseInt(msg[10])));
+										create_hid_report_info(collection.inputReports, reportId, parseInt(msg[8]));
+										create_hid_report_info(collection.outputReports, reportId, parseInt(msg[9]));
+										create_hid_report_info(collection.featureReports, reportId, parseInt(msg[10]));
 									}
 								}
 							}
