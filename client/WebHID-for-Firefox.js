@@ -101,6 +101,7 @@
 
 	let devlist = [];
 	const hash_to_dev = {};
+	const phys_hash_to_dev = {};
 	let active_subscriptions = 0;
 	let ws_promise, devlist_promise, devlist_resolve;
 	const get_ws = function()
@@ -180,16 +181,27 @@
 								const vendorId = parseInt(msg[3]);
 								const collapseIntoSameDevice = (vendorId == 0x8089); // Shitty fix for Sayodevice which expects its collections to be grouped in the same HIDDevice even tho that's not how they present it to the OS.
 								const hash = (collapseIntoSameDevice ? physHash : hidHash);
+
 								let dev;
-								if (hash in hash_to_dev)
+								if (collapseIntoSameDevice)
 								{
-									dev = hash_to_dev[hash];
-									if (!collapseIntoSameDevice || devlist.indexOf(dev) == -1)
+									dev = phys_hash_to_dev[physHash];
+									if (dev && devlist.indexOf(dev) == -1)
 									{
 										devlist.push(dev);
 									}
 								}
 								else
+								{
+									dev = hash_to_dev[hash];
+									if (dev)
+									{
+										devlist.push(dev);
+									}
+
+								}
+
+								if (!dev)
 								{
 									dev = new HIDDevice();
 									dev._physicalHash = physHash;
@@ -305,8 +317,9 @@
 									};
 
 									devlist.push(dev);
-									hash_to_dev[hash] = dev;
+									phys_hash_to_dev[physHash] = dev;
 								}
+								hash_to_dev[hidHash] = dev;
 
 								if (!dev.collections.some(c => c._hash == hidHash))
 								{
