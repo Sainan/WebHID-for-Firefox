@@ -56,11 +56,11 @@
 	{
 		_satisfiesFilter(filter)
 		{
-			if ("usagePage" in filter && filter.usagePage != this.usagePage)
+			if (filter.usagePage !== undefined && filter.usagePage != this.usagePage)
 			{
 				return false;
 			}
-			if ("usage" in filter && filter.usage != this.usage)
+			if (filter.usage !== undefined && filter.usage != this.usage)
 			{
 				return false;
 			}
