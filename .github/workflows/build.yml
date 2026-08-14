@@ -1,0 +1,93 @@
+name: Build
+
+on: push
+
+jobs:
+  ubuntu-22-04:
+    runs-on: [ubuntu-22.04]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: true
+
+      - name: Build Soup
+        working-directory: server
+        run: php Soup/build_lib.php
+
+      - name: Build Server
+        working-directory: server
+        run: clang -fno-rtti -O3 -o WebHID-for-Firefox main.cpp -ISoup/soup -LSoup -lsoup -std=c++17 -fuse-ld=lld -lstdc++ -lm -lresolv -pthreads
+
+      - name: Upload Server
+        uses: actions/upload-artifact@v7
+        with:
+          name: "Ubuntu 22.04+ (X64)"
+          path: server/WebHID-for-Firefox
+
+  macos-x64:
+    runs-on: macos-15-intel
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: true
+
+      - name: Build Soup
+        working-directory: server
+        run: php Soup/build_lib.php
+
+      - name: Build Server
+        working-directory: server
+        run: clang -fno-rtti -O3 -o WebHID-for-Firefox main.cpp -ISoup/soup -LSoup -lsoup -std=c++17 -lc++ -framework CoreFoundation -framework IOKit
+
+      - name: Upload Server
+        uses: actions/upload-artifact@v7
+        with:
+          name: "MacOS (X64)"
+          path: server/WebHID-for-Firefox
+
+  macos-arm64:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: true
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+
+      - name: Build Soup
+        working-directory: server
+        run: php Soup/build_lib.php
+
+      - name: Build Server
+        working-directory: server
+        run: clang -fno-rtti -O3 -o WebHID-for-Firefox main.cpp -ISoup/soup -LSoup -lsoup -std=c++17 -lc++ -framework CoreFoundation -framework IOKit
+
+      - name: Upload Server
+        uses: actions/upload-artifact@v7
+        with:
+          name: "MacOS (ARM64)"
+          path: server/WebHID-for-Firefox
+
+  windows-latest:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: true
+
+      - name: Build Soup
+        working-directory: server
+        run: php Soup/build_lib.php
+
+      - name: Build Server
+        working-directory: server
+        run: clang -fno-rtti -O3 -o WebHID-for-Firefox.exe main.cpp -ISoup/soup -std=c++17 -LSoup -lsoup -luser32
+
+      - name: Upload Server
+        uses: actions/upload-artifact@v7
+        with:
+          name: "Windows (X64)"
+          path: server/WebHID-for-Firefox.exe

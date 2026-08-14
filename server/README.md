@@ -9,6 +9,6 @@ Alternatively, you could manually build the server with Soup as a static library
 cd Soup
 php build_lib.php
 cd ..
-clang main.cpp -ISoup/soup -std=c++17 -fuse-ld=lld -Lsoup -lsoup -luser32
+clang main.cpp -ISoup/soup -std=c++17 -fuse-ld=lld -LSoup -lsoup -luser32
 ```
 Note the `clang` command is specific to Windows. Check [Why we're making Sun](https://calamity.inc/sun/) for more info. :^)
