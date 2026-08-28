@@ -20,7 +20,8 @@
 		"webRequest",
 		"webRequestBlocking",
 		"https://wootility.io/",
-		"https://beta.wootility.io/"
+		"https://beta.wootility.io/",
+		"https://web.8bitdo.com/"
 	],
 	"background": {
 		"scripts": ["background.js"]

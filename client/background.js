@@ -1,14 +1,3 @@
-/*browser.webRequest.onHeadersReceived.addListener(
-	details => {
-		const headers = details.responseHeaders.filter(
-			h => h.name.toLowerCase() !== "content-security-policy"
-			);
-		return { responseHeaders: headers };
-	},
-	{ urls: ["https://wootility.io/"] },
-	["blocking", "responseHeaders"]
-);*/
-
 browser.webRequest.onBeforeRequest.addListener(
 	(details) => {
 		const filter = browser.webRequest.filterResponseData(details.requestId);
@@ -17,10 +6,7 @@ browser.webRequest.onBeforeRequest.addListener(
 
 		filter.ondata = (event) => {
 			let str = decoder.decode(event.data, { stream: true });
-			str = str.replace(
-				"connect-src ",
-				"connect-src wss://127-0-0-1.faketls.com:33881 "
-			);
+			str = str.replace("connect-src ", "connect-src wss://127-0-0-1.faketls.com:33881 ");
 			filter.write(encoder.encode(str));
 			filter.disconnect();
 		};
@@ -37,4 +23,22 @@ browser.webRequest.onBeforeRequest.addListener(
 		types: ["main_frame", "xmlhttprequest"]
 	},
 	["blocking"]
+);
+
+browser.webRequest.onHeadersReceived.addListener(
+	(details) => {
+		for (const h of details.responseHeaders) {
+			if (h.name.toLowerCase() == "content-security-policy") {
+				h.value = h.value.replace("connect-src ", "connect-src wss://127-0-0-1.faketls.com:33881 ");
+			}
+		}
+		return { responseHeaders: details.responseHeaders };
+	},
+	{
+		urls: [
+			"https://web.8bitdo.com/*",
+		],
+		types: ["main_frame"]
+	},
+	["blocking", "responseHeaders"]
 );
