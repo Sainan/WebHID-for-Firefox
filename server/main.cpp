@@ -363,7 +363,7 @@ fPOzDget78P/d2IgzbaKEA==
 		{
 			s.custom_data.getStructFromMap(ClientData).supports_report_ids = true;
 		}*/
-		ServerWebService::wsSendText(s, "ver:0.2.5");
+		ServerWebService::wsSendText(s, "ver:0.2.6");
 	};
 	web_srv.on_websocket_message = [](WebSocketMessage& msg, Socket& s, ServerWebService&)
 	{
