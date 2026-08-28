@@ -16,13 +16,13 @@ jobs:
 
       - name: Build Server
         working-directory: server
-        run: clang -fno-rtti -O3 -o WebHID-for-Firefox main.cpp -ISoup/soup -LSoup -lsoup -std=c++17 -fuse-ld=lld -lstdc++ -lm -lresolv -pthreads
+        run: clang -fno-rtti -O3 -o WebHID-for-Firefox-Server main.cpp -ISoup/soup -LSoup -lsoup -std=c++17 -fuse-ld=lld -lstdc++ -lm -lresolv -pthreads
 
       - name: Upload Server
         uses: actions/upload-artifact@v7
         with:
           name: "Ubuntu 22.04+ (X64)"
-          path: server/WebHID-for-Firefox
+          path: server/WebHID-for-Firefox-Server
 
   macos-x64:
     runs-on: macos-15-intel
@@ -37,13 +37,13 @@ jobs:
 
       - name: Build Server
         working-directory: server
-        run: clang -fno-rtti -O3 -o WebHID-for-Firefox main.cpp -ISoup/soup -LSoup -lsoup -std=c++17 -lc++ -framework CoreFoundation -framework IOKit
+        run: clang -fno-rtti -O3 -o WebHID-for-Firefox-Server main.cpp -ISoup/soup -LSoup -lsoup -std=c++17 -lc++ -framework CoreFoundation -framework IOKit
 
       - name: Upload Server
         uses: actions/upload-artifact@v7
         with:
           name: "MacOS (X64)"
-          path: server/WebHID-for-Firefox
+          path: server/WebHID-for-Firefox-Server
 
   macos-arm64:
     runs-on: macos-14
@@ -63,13 +63,13 @@ jobs:
 
       - name: Build Server
         working-directory: server
-        run: clang -fno-rtti -O3 -o WebHID-for-Firefox main.cpp -ISoup/soup -LSoup -lsoup -std=c++17 -lc++ -framework CoreFoundation -framework IOKit
+        run: clang -fno-rtti -O3 -o WebHID-for-Firefox-Server main.cpp -ISoup/soup -LSoup -lsoup -std=c++17 -lc++ -framework CoreFoundation -framework IOKit
 
       - name: Upload Server
         uses: actions/upload-artifact@v7
         with:
           name: "MacOS (ARM64)"
-          path: server/WebHID-for-Firefox
+          path: server/WebHID-for-Firefox-Server
 
   windows-latest:
     runs-on: windows-latest
@@ -84,10 +84,10 @@ jobs:
 
       - name: Build Server
         working-directory: server
-        run: clang -fno-rtti -O3 -o WebHID-for-Firefox.exe main.cpp -ISoup/soup -std=c++17 -LSoup -lsoup -luser32
+        run: clang -fno-rtti -O3 -o WebHID-for-Firefox-Server.exe main.cpp -ISoup/soup -std=c++17 -LSoup -lsoup -luser32
 
       - name: Upload Server
         uses: actions/upload-artifact@v7
         with:
           name: "Windows (X64)"
-          path: server/WebHID-for-Firefox.exe
+          path: server/WebHID-for-Firefox-Server.exe
