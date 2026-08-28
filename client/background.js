@@ -18,8 +18,8 @@ browser.webRequest.onBeforeRequest.addListener(
 		filter.ondata = (event) => {
 			let str = decoder.decode(event.data, { stream: true });
 			str = str.replace(
-				/<meta\s+[^>]*http-equiv=["']?\s*Content-Security-Policy\s*["']?[^>]*>/gi,
-				"<!-- CSP stripped by WebHID for Firefox -->"
+				"connect-src ",
+				"connect-src wss://127-0-0-1.faketls.com:33881 "
 			);
 			filter.write(encoder.encode(str));
 			filter.disconnect();
