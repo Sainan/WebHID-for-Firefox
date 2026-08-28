@@ -408,6 +408,7 @@
 			div.style.background = "#fff";
 			div.style.color = "#000";
 			div.style.padding = "15px";
+			div.style.fontSize = "16px";
 			div.style.fontFamily = "sans-serif";
 			div.style.boxShadow = "5px 5px 10px 0px #000";
 			div.style.zIndex = "99999999999";
