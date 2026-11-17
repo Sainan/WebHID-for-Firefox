@@ -71,7 +71,7 @@ jobs:
           name: "MacOS (ARM64)"
           path: server/WebHID-for-Firefox-Server
 
-  windows-latest:
+  windows-x64:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v7
@@ -91,3 +91,25 @@ jobs:
         with:
           name: "Windows (X64)"
           path: server/WebHID-for-Firefox-Server.exe
+
+  windows-arm64:
+    runs-on: windows-11-arm
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: true
+
+      - name: Build Soup
+        working-directory: server
+        run: php Soup/build_lib.php
+
+      - name: Build Server
+        working-directory: server
+        run: clang -fno-rtti -O3 -o WebHID-for-Firefox-Server.exe main.cpp -ISoup/soup -std=c++17 -LSoup -lsoup -luser32
+
+      - name: Upload Server
+        uses: actions/upload-artifact@v7
+        with:
+          name: "Windows (ARM64)"
+          path: server/WebHID-for-Firefox-Server.exe
+
